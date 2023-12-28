@@ -3,4 +3,5 @@ global using System.Xml;
 global using System.Xml.Linq;
 
 
+global using UnicodeDb;
 global using UnicodeDb.Helpers;

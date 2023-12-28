@@ -19,6 +19,7 @@ Dictionary<string, (int First, int Last)> blocks = db.Root
 	.ToDictionary(x => x.Attribute("name")!.Value
 		, x => (x.Attribute("first-cp")!.Value.FromHex() ,x.Attribute("last-cp")!.Value.FromHex()));
 
+Console.WriteLine();
 Console.WriteLine("Blocks:");
 foreach (var block in blocks) {
 	Console.WriteLine($"""{block.Value.First,6:X} - {block.Value.Last,6:X}  {block.Key}""");
@@ -27,36 +28,17 @@ foreach (var block in blocks) {
 Dictionary<int, Character> chars = db.Root
 	.Descendants()
 	.Where(x => x.Name.LocalName == "char" && x.Attribute("cp") is not null)
-	.Select(x => Character.Parse(x.ToString(), null))
-	.ToDictionary(x => x.Cp);
+	.Select(x => Character.Parse(x.ToString()))
+	.ToDictionary(x => x.CodePoint);
 
 
-(int first, int last) = blocks.Where(x => x.Key.Contains("Dingbats")).First().Value;
+string blockName = args.Length >= 1 ? args[0] : "Pictogram";
+(string name, (int first, int last)) = blocks.Where(x => x.Key.Contains(blockName)).First();
 
-Console.WriteLine("Dingbats:");
+Console.WriteLine();
+Console.WriteLine($"{name}:");
 foreach ((int _, Character character) in chars.Where(x => x.Key >= first && x.Key <= last)) {
-	Console.WriteLine($"""{character.Cp,6:X} {character.Cp,6}   {char.ConvertFromUtf32(character.Cp),-3} {character.Name}""");
+	Console.WriteLine($"""{character.CodePoint,6:X} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
 }
 
-Console.WriteLine(xml);
-
-record Character(int Cp, string Name, string Age) : IParsable<Character>
-{
-	public static Character Parse(string s, IFormatProvider? provider)
-	{
-		XElement xel = XElement.Parse(s);
-		string name = xel.Attribute("na")?.Value ?? "";
-		if (string.IsNullOrEmpty(name)) {
-			name = xel
-				.Elements()
-				//.Where(x => x.Attribute("type")!.Value == "control")
-				.First()
-				.Attribute("alias")?.Value ?? "";
-		}
-		int cp = xel.Attribute("cp")!.Value.FromHex();
-		string age = xel.Attribute("age")?.Value ?? "";
-		return new(cp, name, age);
-	}
-
-	public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Character result) => throw new NotImplementedException();
-}
+Console.WriteLine();
