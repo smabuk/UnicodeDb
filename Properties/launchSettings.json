@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "UnicodeDb": {
+      "commandName": "Project"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "Emoji": {
+      "commandName": "Project",
+      "commandLineArgs": "emoji"
+    }
+  }
+}

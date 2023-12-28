@@ -1,4 +1,8 @@
-﻿Console.OutputEncoding = System.Text.Encoding.UTF8;
+﻿using System.Diagnostics;
+
+using UnicodeDb;
+
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 Console.WriteLine("Unicode DB exploration");
 Console.WriteLine("======================");
@@ -7,7 +11,7 @@ string xml = XmlFile.Load("ucd.nounihan.flat");
 
 XDocument db = XDocument.Parse(xml);
 xml = "";
-if (db.Root is null ) {
+if (db.Root is null) {
 	return;
 }
 
@@ -16,12 +20,11 @@ Dictionary<string, (int First, int Last)> blocks = db.Root
 	.Where(x => x.Name.LocalName == "blocks")
 	.Elements()
 	.ToDictionary(x => x.Attribute("name")!.Value
-		, x => (x.Attribute("first-cp")!.Value.FromHex() ,x.Attribute("last-cp")!.Value.FromHex()));
+		, x => (x.Attribute("first-cp")!.Value.FromHex(), x.Attribute("last-cp")!.Value.FromHex()));
 
-Console.WriteLine();
-Console.WriteLine("Blocks:");
-foreach (var block in blocks) {
-	Console.WriteLine($"""{block.Value.First,6:X} - {block.Value.Last,6:X}  {block.Key}""");
+if (args.Length == 0) {
+	DisplayListOfBlocks(blocks);
+	return;
 }
 
 Dictionary<int, Character> chars = db.Root
@@ -30,16 +33,98 @@ Dictionary<int, Character> chars = db.Root
 	.Select(x => Character.Parse(x.ToString()))
 	.ToDictionary(x => x.CodePoint);
 
+string blockName = args[0];
 
-string blockName = args.Length >= 1 ? args[0] : "dingbat";
-
-foreach (var block in blocks.Where(x => x.Key.Contains(blockName, StringComparison.OrdinalIgnoreCase))) {
-	Console.WriteLine();
-	Console.WriteLine($"{block.Key}:");
-	foreach ((int _, Character character) in chars.Where(x => x.Key >= block.Value.First && x.Key <= block.Value.Last)) {
-		Console.WriteLine($"""{character.CodePoint,6:X} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
+if      (blockName == "numeric") { DisplayCharactersWithNumericValues(chars); }
+else if (blockName == "emoji")   { DisplayAllEmoji(chars); }
+else if (blockName == "pics")    { DisplayAllPictographs(chars); }
+else if (blockName == "keycaps") { DisplayKeyCaps(chars); }
+else {
+	foreach ((string name, (int first, int last)) in blocks.Where(x => x.Key.Contains(blockName, StringComparison.OrdinalIgnoreCase))) {
+		DisplayBlock(chars, name, first, last);
 	}
 }
 
-
 Console.WriteLine();
+
+
+static void DisplayListOfBlocks(Dictionary<string, (int First, int Last)> blocks)
+{
+	Console.WriteLine();
+	Console.WriteLine("Blocks:");
+	foreach ((string blockName, (int first, int last)) in blocks) {
+		Console.WriteLine($"""{first,6:X} - {last,6:X}  {blockName}""");
+	}
+}
+
+static void DisplayBlock(Dictionary<int, Character> chars, string blockName, int first, int last)
+{
+	Console.WriteLine();
+	Console.WriteLine($"{blockName}:");
+	foreach ((int _, Character character) in chars.Where(x => x.Key >= first && x.Key <= last)) {
+		Console.WriteLine($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
+	}
+}
+
+static void DisplayAllEmoji(Dictionary<int, Character> chars)
+{
+	Console.WriteLine();
+	Console.WriteLine($"Emoji:");
+	foreach (var character in chars.Values.Where(c => c.IsEmoji)) {
+		string strEmoji = "";
+		//strEmoji += ", " + (character.IsEmoji             ? "Emoji " : "" );
+		strEmoji += (character.IsEmojiPresentation ? ", Presentation" : "");
+		strEmoji += (character.IsEmojiBase ? ", Base" : "");
+		strEmoji += (character.IsEmojiComponent ? ", Component" : "");
+		strEmoji += (character.IsEmojiModifier ? ", Modifier" : "");
+		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.String,-2}  """);
+		Console.Write($"{character.AllNames,-60}");
+		Console.WriteLine($"     (Emoji: {strEmoji.Trim(',').Trim(' ')})");
+	}
+	int count = 0;
+	int width = Console.WindowWidth / 4;
+	foreach (var character in chars.Values.Where(c => c.IsEmoji && !c.IsEmojiComponent && c.IsEmojiPresentation)) {
+		if (count++ % width == 0) {
+			Console.WriteLine();
+		}
+		Console.Write(character.String);
+	}
+}
+
+static void DisplayCharactersWithNumericValues(Dictionary<int, Character> chars)
+{
+	Console.WriteLine();
+	Console.WriteLine($"Characters with numeric values:");
+	foreach (var character in chars.Values.Where(c => c.NumericType != "None")) {
+		Console.WriteLine($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}   {character.String,-3}  => {character.NumericValue,8:0.###} {character.NumericType,3} {character.NumericValueString,8}    {character.AllNames}""");
+	}
+}
+
+static void DisplayAllPictographs(Dictionary<int, Character> chars)
+{
+	Console.WriteLine();
+	Console.WriteLine($"Extended Pictographic:");
+	foreach (var character in chars.Values.Where(c => c.IsExtendedPictographic)) {
+		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.StringAsEmoji,-2}  """);
+		Console.WriteLine($" {character.Age,4} {character.AllNames,-60} ({character.BlockName})");
+	}
+	int count = 0;
+	int width = Console.WindowWidth / 4;
+	foreach (var character in chars.Values.Where(c => c.IsExtendedPictographic)) {
+		if (count++ % width == 0) {
+			Console.WriteLine();
+		}
+		Console.Write(character.String);
+	}
+}
+
+static void DisplayKeyCaps(Dictionary<int, Character> chars)
+{
+	Console.WriteLine();
+	Console.WriteLine($"Keycaps:");
+	for (int codePoint = 48; codePoint < 58; codePoint++) {
+		Console.Write($"""{"0x" + codePoint.ToString("X"),8} {codePoint,6}""");
+		Console.Write($"""  {char.ConvertFromUtf32(codePoint)}{char.ConvertFromUtf32(0x20E3)}""");
+		Console.WriteLine($" {chars[codePoint].Age,4} {chars[codePoint].AllNames,-60} ({chars[codePoint].BlockName})");
+	}
+}
