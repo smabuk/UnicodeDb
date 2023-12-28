@@ -3,7 +3,8 @@
 Console.WriteLine("Unicode DB exploration");
 Console.WriteLine("======================");
 
-string xml = File.ReadAllText("ucd.all.flat.xml").ReplaceLineEndings();
+//string xml = File.ReadAllText("ucd.all.flat.xml").ReplaceLineEndings();
+string xml = File.ReadAllText("ucd.nounihan.flat.xml").ReplaceLineEndings();
 
 
 XDocument db = XDocument.Parse(xml);
@@ -32,7 +33,7 @@ Dictionary<int, Character> chars = db.Root
 	.ToDictionary(x => x.CodePoint);
 
 
-string blockName = args.Length >= 1 ? args[0] : "Pictogram";
+string blockName = args.Length >= 1 ? args[0] : "Pictograph";
 (string name, (int first, int last)) = blocks.Where(x => x.Key.Contains(blockName)).First();
 
 Console.WriteLine();

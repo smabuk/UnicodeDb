@@ -3,7 +3,7 @@
 ///  Representation of a char in the XML database
 /// </summary>
 /// <see cref="https://www.unicode.org/reports/tr42/"/>
-internal sealed record Character(int CodePoint, string Name, string Age, string BlockName, bool IsEmoji) : IParsable<Character>
+internal sealed record Character(int CodePoint, string Name, string Age, string BlockName, string Script, bool IsEmoji) : IParsable<Character>
 {
 	public required List<NameAlias> Aliases { get; init; }
 
@@ -15,11 +15,12 @@ internal sealed record Character(int CodePoint, string Name, string Age, string 
 	{
 		XElement xel = XElement.Parse(s);
 
-		string name = xel.Attribute("na")?.Value ?? "";
-		int      cp = xel.Attribute("cp")!.Value.FromHex();
-		string  age = xel.Attribute("age")?.Value ?? "";
-		string  blk = xel.Attribute("blk")?.Value ?? "";
-		bool  emoji = ((xel.Attribute("Emoji")?.Value ?? "") == "Y");
+		string   name = xel.Attribute("na")?.Value ?? "";
+		int        cp = xel.Attribute("cp")!.Value.FromHex();
+		string    age = xel.Attribute("age")?.Value ?? "";
+		string    blk = xel.Attribute("blk")?.Value ?? "";
+		string script = xel.Attribute("sc")?.Value ?? "";
+		bool    emoji = ((xel.Attribute("Emoji")?.Value ?? "") == "Y");
 
 		List<NameAlias> aliases = xel
 			.Elements()
@@ -34,7 +35,7 @@ internal sealed record Character(int CodePoint, string Name, string Age, string 
 		//		.Attribute("alias")?.Value ?? "";
 		//}
 
-		return new(cp, name, age, blk, emoji) { Aliases = aliases };
+		return new(cp, name, age, blk, script, emoji) { Aliases = aliases };
 	}
 
 	public static Character Parse(string s) => Parse(s, null);
