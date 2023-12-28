@@ -3,9 +3,7 @@
 Console.WriteLine("Unicode DB exploration");
 Console.WriteLine("======================");
 
-//string xml = File.ReadAllText("ucd.all.flat.xml").ReplaceLineEndings();
-string xml = File.ReadAllText("ucd.nounihan.flat.xml").ReplaceLineEndings();
-
+string xml = XmlFile.Load("ucd.nounihan.flat");
 
 XDocument db = XDocument.Parse(xml);
 xml = "";
@@ -33,13 +31,15 @@ Dictionary<int, Character> chars = db.Root
 	.ToDictionary(x => x.CodePoint);
 
 
-string blockName = args.Length >= 1 ? args[0] : "Pictograph";
-(string name, (int first, int last)) = blocks.Where(x => x.Key.Contains(blockName)).First();
+string blockName = args.Length >= 1 ? args[0] : "dingbat";
 
-Console.WriteLine();
-Console.WriteLine($"{name}:");
-foreach ((int _, Character character) in chars.Where(x => x.Key >= first && x.Key <= last)) {
-	Console.WriteLine($"""{character.CodePoint,6:X} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
+foreach (var block in blocks.Where(x => x.Key.Contains(blockName, StringComparison.OrdinalIgnoreCase))) {
+	Console.WriteLine();
+	Console.WriteLine($"{block.Key}:");
+	foreach ((int _, Character character) in chars.Where(x => x.Key >= block.Value.First && x.Key <= block.Value.Last)) {
+		Console.WriteLine($"""{character.CodePoint,6:X} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
+	}
 }
+
 
 Console.WriteLine();
