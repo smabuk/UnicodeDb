@@ -1,16 +1,10 @@
-﻿using System.Diagnostics;
-
-using UnicodeDb;
-
-Console.OutputEncoding = System.Text.Encoding.UTF8;
+﻿Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 Console.WriteLine("Unicode DB exploration");
 Console.WriteLine("======================");
 
-string xml = XmlFile.Load("ucd.nounihan.flat");
+XDocument db = XDocument.Parse(XmlFile.Load("ucd.nounihan.flat"));
 
-XDocument db = XDocument.Parse(xml);
-xml = "";
 if (db.Root is null) {
 	return;
 }
@@ -32,6 +26,13 @@ Dictionary<int, Character> chars = db.Root
 	.Where(x => x.Name.LocalName == "char" && x.Attribute("cp") is not null)
 	.Select(x => Character.Parse(x.ToString()))
 	.ToDictionary(x => x.CodePoint);
+
+
+
+if (args.Length == 2 && args[0].ToLower() == "-c") {
+	DisplayCharactersWhere(chars, args[1]);
+	return;
+}
 
 string blockName = args[0];
 
@@ -77,7 +78,7 @@ static void DisplayAllEmoji(Dictionary<int, Character> chars)
 		strEmoji += (character.IsEmojiBase ? ", Base" : "");
 		strEmoji += (character.IsEmojiComponent ? ", Component" : "");
 		strEmoji += (character.IsEmojiModifier ? ", Modifier" : "");
-		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.String,-2}  """);
+		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.StringAsEmoji,-2}  """);
 		Console.Write($"{character.AllNames,-60}");
 		Console.WriteLine($"     (Emoji: {strEmoji.Trim(',').Trim(' ')})");
 	}
@@ -115,6 +116,17 @@ static void DisplayAllPictographs(Dictionary<int, Character> chars)
 			Console.WriteLine();
 		}
 		Console.Write(character.String);
+	}
+}
+
+static void DisplayCharactersWhere(Dictionary<int, Character> chars, string searchTerm)
+{
+	Console.WriteLine();
+	Console.WriteLine($"""Searching for ... "{searchTerm}":""");
+	Console.WriteLine();
+	foreach (var character in chars.Values.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || c.Aliases.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).Any())) {
+		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.StringAsEmoji,-2}  """);
+		Console.WriteLine($" {character.Age,4} {character.AllNames,-60} ({character.BlockName})");
 	}
 }
 

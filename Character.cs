@@ -18,7 +18,7 @@ internal sealed record Character(
 	bool IsExtendedPictographic,
 	string NumericType,
 	string NumericValueString,
-	float? NumericValue
+	double NumericValue
 	) : IParsable<Character>
 {
 	public required List<NameAlias> Aliases { get; init; }
@@ -41,13 +41,13 @@ internal sealed record Character(
 		string script = xel.Attribute("sc")?.Value ?? "";
 		string     nt = xel.Attribute("nt")?.Value ?? "";
 		string     nv = xel.Attribute("nv")?.Value ?? "";
-		float? nValue = nt switch
+		float  nValue = nt switch
 		{
 			"De" => float.Parse(nv),
 			"Di" => float.Parse(nv),
 			"Nu" when nv.Contains('/') => float.Parse(nv.Split('/')[0]) / float.Parse(nv.Split('/')[1]),
-			"Nu" => float.TryParse(nv, null, out float nValue2) == true ? nValue2 : null,
-			_ => null,
+			"Nu" => float.TryParse(nv, null, out float nValue2) == true ? nValue2 : 0,
+			_ => 0,
 		};
 		bool emoji = ((xel.Attribute("Emoji")  ?.Value ?? "") == "Y");
 		bool ePres = ((xel.Attribute("EPres")  ?.Value ?? "") == "Y");
