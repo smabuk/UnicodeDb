@@ -21,10 +21,10 @@ if (args.Length == 0) {
 	return;
 }
 
-Dictionary<int, Character> chars = db.Root
+Dictionary<int, UnicodeCharacter> chars = db.Root
 	.Descendants()
 	.Where(x => x.Name.LocalName == "char" && x.Attribute("cp") is not null)
-	.Select(x => Character.Parse(x.ToString()))
+	.Select(x => UnicodeCharacter.Parse(x.ToString()))
 	.ToDictionary(x => x.CodePoint);
 
 
@@ -58,16 +58,16 @@ static void DisplayListOfBlocks(Dictionary<string, (int First, int Last)> blocks
 	}
 }
 
-static void DisplayBlock(Dictionary<int, Character> chars, string blockName, int first, int last)
+static void DisplayBlock(Dictionary<int, UnicodeCharacter> chars, string blockName, int first, int last)
 {
 	Console.WriteLine();
 	Console.WriteLine($"{blockName}:");
-	foreach ((int _, Character character) in chars.Where(x => x.Key >= first && x.Key <= last)) {
+	foreach ((int _, UnicodeCharacter character) in chars.Where(x => x.Key >= first && x.Key <= last)) {
 		Console.WriteLine($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}   {character.String,-3} {character.Age,4}  {character.AllNames}""");
 	}
 }
 
-static void DisplayAllEmoji(Dictionary<int, Character> chars)
+static void DisplayAllEmoji(Dictionary<int, UnicodeCharacter> chars)
 {
 	Console.WriteLine();
 	Console.WriteLine($"Emoji:");
@@ -92,16 +92,17 @@ static void DisplayAllEmoji(Dictionary<int, Character> chars)
 	}
 }
 
-static void DisplayCharactersWithNumericValues(Dictionary<int, Character> chars)
+static void DisplayCharactersWithNumericValues(Dictionary<int, UnicodeCharacter> chars)
 {
 	Console.WriteLine();
 	Console.WriteLine($"Characters with numeric values:");
-	foreach (var character in chars.Values.Where(c => c.NumericType != "None")) {
-		Console.WriteLine($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}   {character.String,-3}  => {character.NumericValue,8:0.###} {character.NumericType,3} {character.NumericValueString,8}    {character.AllNames}""");
+	foreach (var character in chars.Values.Where(c => c.Numeric is not None)) {
+		string type = character.Numeric.GetType().ToString()[10..];
+		Console.WriteLine($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}   {character.String,-3}  => {character.Numeric.Value,8:0.###} {type,-8} {character.Numeric.ValueString,8}    {character.AllNames}""");
 	}
 }
 
-static void DisplayAllPictographs(Dictionary<int, Character> chars)
+static void DisplayAllPictographs(Dictionary<int, UnicodeCharacter> chars)
 {
 	Console.WriteLine();
 	Console.WriteLine($"Extended Pictographic:");
@@ -119,18 +120,18 @@ static void DisplayAllPictographs(Dictionary<int, Character> chars)
 	}
 }
 
-static void DisplayCharactersWhere(Dictionary<int, Character> chars, string searchTerm)
+static void DisplayCharactersWhere(Dictionary<int, UnicodeCharacter> chars, string searchTerm)
 {
 	Console.WriteLine();
 	Console.WriteLine($"""Searching for ... "{searchTerm}":""");
 	Console.WriteLine();
 	foreach (var character in chars.Values.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || c.Aliases.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).Any())) {
 		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.StringAsEmoji,-2}  """);
-		Console.WriteLine($" {character.Age,4} {character.AllNames,-60} ({character.BlockName})");
+		Console.WriteLine($" {character.Age,4} {character.GeneralCategory,4} {character.AllNames,-60} ({character.BlockName})");
 	}
 }
 
-static void DisplayKeyCaps(Dictionary<int, Character> chars)
+static void DisplayKeyCaps(Dictionary<int, UnicodeCharacter> chars)
 {
 	Console.WriteLine();
 	Console.WriteLine($"Keycaps:");
