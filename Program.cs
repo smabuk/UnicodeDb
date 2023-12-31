@@ -29,7 +29,7 @@ Dictionary<int, UnicodeCharacter> chars = db.Root
 
 
 
-if (args.Length == 2 && args[0].ToLower() == "-c") {
+if (args.Length == 2 && args[0].Equals("-c", StringComparison.CurrentCultureIgnoreCase)) {
 	DisplayCharactersWhere(chars, args[1]);
 	return;
 }
@@ -41,7 +41,7 @@ else if (blockName == "emoji")   { DisplayAllEmoji(chars); }
 else if (blockName == "pics")    { DisplayAllPictographs(chars); }
 else if (blockName == "keycaps") { DisplayKeyCaps(chars); }
 else {
-	foreach ((string name, (int first, int last)) in blocks.Where(x => x.Key.Contains(blockName, StringComparison.OrdinalIgnoreCase))) {
+	foreach ((string name, (int first, int last)) in blocks.Where(x => x.Key.Contains(blockName, StringComparison.CurrentCultureIgnoreCase))) {
 		DisplayBlock(chars, name, first, last);
 	}
 }
@@ -125,7 +125,7 @@ static void DisplayCharactersWhere(Dictionary<int, UnicodeCharacter> chars, stri
 	Console.WriteLine();
 	Console.WriteLine($"""Searching for ... "{searchTerm}":""");
 	Console.WriteLine();
-	foreach (var character in chars.Values.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || c.Aliases.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).Any())) {
+	foreach (var character in chars.Values.Where(c => c.Name.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) || c.Aliases.Where(c => c.Name.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)).Any())) {
 		Console.Write($"""{"0x" + character.CodePoint.ToString("X"),8} {character.CodePoint,6}  {character.StringAsEmoji,-2}  """);
 		Console.WriteLine($" {character.Age,4} {character.GeneralCategory,4} {character.AllNames,-60} ({character.BlockName})");
 	}
